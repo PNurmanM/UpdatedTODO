@@ -371,7 +371,7 @@ body::before{
 .listItem{
     display: grid;
     grid-template-columns: auto 1fr auto auto;
-    align-items: center;
+    align-items: start;
     gap: 1rem;
     padding: 1.2rem 1.4rem;
     border-radius: 16px;
@@ -389,6 +389,7 @@ body::before{
 .textBlock{
     display: grid;
     gap: 0.35rem;
+    align-self: start;
 }
 
 .dueAbove{
@@ -417,6 +418,7 @@ body::before{
     grid-template-columns: 1fr;
     gap: 0.4rem;
     justify-items: start;
+    align-self: start;
 }
 
 .actionGroup{
@@ -424,6 +426,8 @@ body::before{
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
+    align-self: start;
+    margin-top: 0.15rem;
 }
 
 .moveStack{
