@@ -156,7 +156,9 @@ function TodoList(){
     const remainingCount = tasks.length - completedCount;
     const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
 
-    const filteredTasks = tasks.filter(task => {
+    const tasksWithIndex = tasks.map((task, index) => ({task, index}));
+
+    const filteredEntries = tasksWithIndex.filter(({task}) => {
         const priority = task.priority || 'normal';
         if(filter === 'active' && task.isChecked) return false;
         if(filter === 'done' && !task.isChecked) return false;
@@ -251,8 +253,7 @@ function TodoList(){
     ];
 
     const groupedTasks = sections.map(section => {
-        const items = filteredTasks
-            .map((task, index) => ({task, index}))
+        const items = filteredEntries
             .filter(({task}) => getDueBucket(task.dueDate) === section.id)
             .sort((a, b) => {
                 if(section.id === 'none') return a.index - b.index;
@@ -265,14 +266,14 @@ function TodoList(){
     });
 
     const calendarDays = buildCalendarDays(calendarMonth);
-    const dueTasksByDate = filteredTasks.reduce((acc, task) => {
-        if(task.dueDate){
-            if(!acc[task.dueDate]) acc[task.dueDate] = [];
-            acc[task.dueDate].push(task);
+    const dueEntriesByDate = filteredEntries.reduce((acc, entry) => {
+        if(entry.task.dueDate){
+            if(!acc[entry.task.dueDate]) acc[entry.task.dueDate] = [];
+            acc[entry.task.dueDate].push(entry);
         }
         return acc;
     }, {});
-    const noDateTasks = filteredTasks.filter(task => !task.dueDate);
+    const noDateEntries = filteredEntries.filter(({task}) => !task.dueDate);
     const todayKey = getDateKey(new Date());
 
     return(
@@ -408,7 +409,7 @@ function TodoList(){
                     </div>  
                     <div className={styles.listSection}>
                         {viewMode === 'list' ? (
-                            filteredTasks.length === 0 ? (
+                            filteredEntries.length === 0 ? (
                             <div className={styles.emptyState}>
                                 {tasks.length === 0 ? 'Nothing here yet. Add a first task.' : 'No tasks in this view.'}
                             </div>
@@ -492,27 +493,26 @@ function TodoList(){
                                             return <div key={`empty-${index}`} className={styles.calendarCell}></div>;
                                         }
                                         const dateKey = getDateKey(day);
-                                        const items = dueTasksByDate[dateKey] || [];
+                                        const items = dueEntriesByDate[dateKey] || [];
                                         const isToday = dateKey === todayKey;
                                         return (
                                             <div key={dateKey} className={isToday ? `${styles.calendarCell} ${styles.calendarToday}` : styles.calendarCell}>
                                                 <span className={styles.calendarDay}>{day.getDate()}</span>
                                                 <div className={styles.calendarTasks}>
-                                                    {items.slice(0, 3).map((task, taskIndex) => (
+                                                    {items.slice(0, 3).map((entry, taskIndex) => (
                                                         <button
                                                             key={`${dateKey}-${taskIndex}`}
                                                             type="button"
                                                             onClick={() => {
-                                                                const originalIndex = tasks.indexOf(task);
-                                                                if(originalIndex >= 0) checkItem(originalIndex);
+                                                                checkItem(entry.index);
                                                             }}
                                                             className={
-                                                                `${styles.calendarTask} ${task.isChecked ? styles.calendarTaskDone : ''} ` +
+                                                                `${styles.calendarTask} ${entry.task.isChecked ? styles.calendarTaskDone : ''} ` +
                                                                 (calendarColorMode === 'priority'
-                                                                    ? `${styles[`priority${(task.priority || 'normal').charAt(0).toUpperCase()}${(task.priority || 'normal').slice(1)}`]}`
-                                                                    : `${styles[`type${(task.type || 'General').replace(/\s+/g, '')}`]}`)
+                                                                    ? `${styles[`priority${(entry.task.priority || 'normal').charAt(0).toUpperCase()}${(entry.task.priority || 'normal').slice(1)}`]}`
+                                                                    : `${styles[`type${(entry.task.type || 'General').replace(/\s+/g, '')}`]}`)
                                                             }>
-                                                            {task.text}
+                                                            {entry.task.text}
                                                         </button>
                                                     ))}
                                                     {items.length > 3 ? (
@@ -523,21 +523,20 @@ function TodoList(){
                                         );
                                     })}
                                 </div>
-                                {noDateTasks.length > 0 ? (
+                                {noDateEntries.length > 0 ? (
                                     <div className={styles.calendarAside}>
                                         <div className={styles.sectionHeader}>
                                             <span>General tasks</span>
-                                            <span className={styles.sectionCount}>{noDateTasks.length}</span>
+                                            <span className={styles.sectionCount}>{noDateEntries.length}</span>
                                         </div>
                                         <div className={styles.calendarNoDate}>
-                                            {noDateTasks.map((task, index) => (
+                                            {noDateEntries.map(({task, index}) => (
                                                 <button
                                                     key={`nodate-${index}`}
                                                     type="button"
                                                     className={task.isChecked ? `${styles.calendarNoDateItem} ${styles.calendarNoDateDone}` : styles.calendarNoDateItem}
                                                     onClick={() => {
-                                                        const originalIndex = tasks.indexOf(task);
-                                                        if(originalIndex >= 0) checkItem(originalIndex);
+                                                        checkItem(index);
                                                     }}>
                                                     <span className={styles.calendarNoDateText}>{task.text}</span>
                                                     <div className={styles.calendarNoDateMeta}>
